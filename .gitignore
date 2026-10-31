@@ -24,4 +24,4 @@ dist-ssr
 *.sw?
 
 # Claude Code: ajustes personales (el resto de .claude/ se versiona)
-.claude/settings.local.json
+.mcp.json
