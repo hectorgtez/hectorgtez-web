@@ -49,10 +49,12 @@ export function ThemeSwitch({ isDark, onToggle }: ThemeSwitchProps) {
       aria-checked={isDark}
       aria-label="Modo oscuro"
       onClick={onToggle}
-      className="group relative inline-flex h-11 w-[4.5rem] shrink-0 items-center rounded-full bg-action p-1 transition-colors duration-200 hover:bg-action-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink focus-visible:ring-offset-2 focus-visible:ring-offset-surface motion-reduce:transition-none"
+      className="group relative inline-flex h-11 w-[4.5rem] shrink-0 items-center rounded-full bg-action p-1 transition-colors duration-200 hover:bg-action-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink focus-visible:ring-offset-2 focus-visible:ring-offset-surface motion-reduce:transition-none max-[374px]:w-11"
     >
+      {/* A ≤374 px el botón mide 44×44 y el pulgar de 36 px queda centrado
+          (4 px de padding) sin desplazarse: solo se ve el icono del tema actual. */}
       <span
-        className={`flex size-9 items-center justify-center rounded-full bg-page text-action transition-transform duration-200 motion-reduce:transition-none ${
+        className={`flex size-9 items-center justify-center rounded-full bg-page text-action transition-transform duration-200 motion-reduce:transition-none max-[374px]:translate-x-0 ${
           isDark ? 'translate-x-7' : 'translate-x-0'
         }`}
       >

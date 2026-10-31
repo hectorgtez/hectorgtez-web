@@ -1,15 +1,27 @@
+import { BrandFlight } from './components/brand/BrandFlight.tsx'
+import { Footer } from './components/layout/Footer.tsx'
 import { Navbar } from './components/layout/Navbar.tsx'
+import { SkipLink } from './components/layout/SkipLink.tsx'
 import { useTheme } from './hooks/useTheme.ts'
+import { useActiveSection } from './hooks/useActiveSection.ts'
+import { useBrandFlight } from './hooks/useBrandFlight.ts'
+import { MAIN_ID } from './data/navigation.ts'
+import { Home } from './pages/Home.tsx'
 
 export default function App() {
   const { isDark, toggleTheme } = useTheme()
+  const activeId = useActiveSection()
+  useBrandFlight()
 
   return (
     <>
-      <Navbar isDark={isDark} onToggleTheme={toggleTheme} />
-      <main className="mx-auto flex min-h-[calc(100dvh-4rem)] max-w-6xl items-center justify-center px-4 text-ink">
-        <h1 className="text-4xl font-bold sm:text-5xl md:text-6xl">hectorgtez-web</h1>
+      <SkipLink />
+      <Navbar isDark={isDark} onToggleTheme={toggleTheme} activeId={activeId} />
+      <BrandFlight />
+      <main id={MAIN_ID} tabIndex={-1} className="focus:outline-none">
+        <Home />
       </main>
+      <Footer />
     </>
   )
 }

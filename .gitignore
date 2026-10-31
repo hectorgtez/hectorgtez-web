@@ -23,4 +23,5 @@ dist-ssr
 *.sln
 *.sw?
 
-opencode.json
+# Claude Code: ajustes personales (el resto de .claude/ se versiona)
+.claude/settings.local.json

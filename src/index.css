@@ -43,8 +43,372 @@
   }
 }
 
+/* --- Anclaje y movimiento ------------------------------------------------- */
+
+/* Margen de anclaje O = alto de la barra (4rem) + 1rem. Es el fallback antes
+   del primer efecto: el hook del scrollspy escribe en <html> el alto real
+   medido, para que barra y línea de referencia compartan el mismo número. */
+:root {
+  --anchor-offset: 5rem;
+}
+
+@layer base {
+  html {
+    scroll-padding-top: var(--anchor-offset, 5rem);
+  }
+
+  /* `h1`, `h2` y `main` solo reciben foco por programa (tabindex="-1"):
+     no dibujan anillo. Los controles interactivos no llevan tabindex="-1". */
+  [tabindex="-1"]:focus {
+    outline: none;
+  }
+}
+
+/* Solo sin preferencia de movimiento reducido: con `reduce` el salto es
+   inmediato y no se añade ninguna transición nueva. */
+@media (prefers-reduced-motion: no-preference) {
+  html {
+    scroll-behavior: smooth;
+  }
+}
+
+/* --- Menú de secciones ---------------------------------------------------- */
+
+@layer components {
+  /* Panel del menú en pantallas estrechas. El componente lo posiciona en
+     absoluto bajo la barra; aquí solo se garantiza que no empuja el layout,
+     que no crece más que la ventana y que su scroll no encadena a la página. */
+  .nav-panel {
+    max-height: calc(100vh - 4rem);
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    touch-action: pan-y;
+  }
+
+  @supports (height: 100dvh) {
+    .nav-panel {
+      max-height: calc(100dvh - 4rem);
+    }
+  }
+
+  /* Anillo de foco reutilizable para controles: 2 px de anillo más 2 px de
+     separación con el color de la superficie. `ink` sobre `surface` supera
+     3:1 en ambos temas. */
+  .focus-ring:focus-visible {
+    outline: none;
+    box-shadow:
+      0 0 0 2px var(--theme-surface),
+      0 0 0 4px var(--theme-ink);
+  }
+}
+
+/* --- Saltar al contenido -------------------------------------------------- */
+
+@layer components {
+  /* Fuera de la vista y del flujo hasta recibir foco: no ocupa espacio, no se
+     anuncia visualmente y no altera el layout. Al enfocarse aparece completo. */
+  .skip-link {
+    position: absolute;
+    top: 0.5rem;
+    left: 0.5rem;
+    z-index: 60;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+
+  .skip-link:focus {
+    width: auto;
+    height: auto;
+    padding: 0.75rem 1rem;
+    overflow: visible;
+    clip-path: none;
+    border: 1px solid var(--theme-line);
+    border-radius: 0.375rem;
+    background-color: var(--theme-surface);
+    color: var(--theme-ink);
+    font-weight: 700;
+  }
+}
+
+/* Indicador del enlace activo: subrayado de 2 px, no cromático, presente en
+   reposo, hover y foco. Sin capa para que ninguna utilidad de hover/foco lo
+   anule; el grosor y la posición no alteran el layout. */
+.nav-link[aria-current],
+.nav-link[aria-current]:hover,
+.nav-link[aria-current]:focus,
+.nav-link[aria-current]:focus-visible {
+  text-decoration-line: underline;
+  text-decoration-thickness: 2px;
+  text-decoration-color: var(--theme-action);
+  text-underline-offset: 0.35em;
+}
+
+/* Hero: colores fijos por tema para poder fundir las capas con opacity.
+   Los derivados translúcidos usan los RGB de la paleta, sin colores nuevos. */
+:root {
+  --hero-dark-glow-a: #E5C378;                      /* acento oscuro */
+  --hero-dark-glow-b: #7A4578;                      /* primario oscuro */
+  --hero-dark-glow-a-soft: rgba(229, 195, 120, 0.32);
+  --hero-dark-glow-b-soft: rgba(122, 69, 120, 0.55);
+  --hero-dark-base: rgba(14, 12, 16, 0.72);         /* #0E0C10 */
+  --hero-dark-veil: rgba(14, 12, 16, 0.62);
+
+  --hero-light-glow-a: #5E335C;                     /* primario claro */
+  --hero-light-glow-b: #B88E3B;                     /* acento claro */
+  --hero-light-glow-a-soft: rgba(94, 51, 92, 0.22);
+  --hero-light-glow-b-soft: rgba(184, 142, 59, 0.26);
+  --hero-light-base: rgba(250, 249, 250, 0.78);     /* #FAF9FA */
+  --hero-light-veil: rgba(250, 249, 250, 0.66);
+}
+
+/* Fallback de altura visible: `vh` cubre navegadores sin `dvh`; el bloque
+   `@supports` lo sustituye solo cuando la unidad dinámica está soportada. */
+.hero__section {
+  min-height: calc(100vh - 4rem);
+}
+
+@supports (height: 100dvh) {
+  .hero__section {
+    min-height: calc(100dvh - 4rem);
+  }
+}
+
+/* Fundido inferior: disuelve el resplandor del hero en el fondo de página para
+   que el cambio a «Sobre mí» no tenga un corte seco. Queda fijado al borde de
+   la sección (no se mueve con el parallax) y usa el mismo color de página que
+   <html>, con su misma transición de tema. */
+@supports ((-webkit-mask-image: linear-gradient(#000, transparent)) or (mask-image: linear-gradient(#000, transparent))) {
+  .hero__section::after {
+    content: "";
+    position: absolute;
+    right: 0;
+    bottom: -1px;
+    left: 0;
+    z-index: 1;
+    height: calc(30% + 1px);
+    background-color: var(--theme-page);
+    pointer-events: none;
+    -webkit-mask-image: linear-gradient(to bottom, transparent 0%, #000 100%);
+    mask-image: linear-gradient(to bottom, transparent 0%, #000 100%);
+    transition: background-color 200ms ease;
+  }
+}
+
+/* Contenedor sobredimensionado: el desplazamiento positivo del fondo no
+   descubre el borde superior; la sección recorta el excedente. */
+.hero__bg {
+  position: absolute;
+  inset: -20% 0;
+  pointer-events: none;
+  transform: translate3d(0, var(--hero-bg-shift, 0px), 0);
+  will-change: transform;
+}
+
+.hero__layer {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  transition: opacity 200ms ease;
+}
+
+/* Dos capas completas y fijas: al cambiar data-theme se cruzan sus opacidades. */
+.hero__layer--dark {
+  background-color: var(--hero-dark-base);
+  background-image:
+    radial-gradient(55% 60% at 20% 20%, var(--hero-dark-glow-a-soft), transparent 70%),
+    radial-gradient(60% 70% at 80% 75%, var(--hero-dark-glow-b-soft), transparent 72%);
+  opacity: 1;
+}
+
+.hero__layer--light {
+  background-color: var(--hero-light-base);
+  background-image:
+    radial-gradient(55% 60% at 20% 20%, var(--hero-light-glow-a-soft), transparent 70%),
+    radial-gradient(60% 70% at 80% 75%, var(--hero-light-glow-b-soft), transparent 72%);
+}
+
+html[data-theme="light"] .hero__layer--dark {
+  opacity: 0;
+}
+
+html[data-theme="light"] .hero__layer--light {
+  opacity: 1;
+}
+
+/* Velo de contraste: dos velos superpuestos que también se funden por tema.
+   Más denso en el centro, donde vive el bloque de texto. */
+.hero__scrim {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.hero__scrim::before,
+.hero__scrim::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  transition: opacity 200ms ease;
+}
+
+.hero__scrim::before {
+  background: radial-gradient(60% 60% at 50% 50%, var(--hero-dark-veil), transparent 78%);
+  opacity: 1;
+}
+
+.hero__scrim::after {
+  background: radial-gradient(60% 60% at 50% 50%, var(--hero-light-veil), transparent 78%);
+}
+
+html[data-theme="light"] .hero__scrim::before {
+  opacity: 0;
+}
+
+html[data-theme="light"] .hero__scrim::after {
+  opacity: 1;
+}
+
+/* Color retrasado 100 ms: a mitad del fundido el fondo compuesto es
+   intermedio y un color también intermedio perdería contraste. Se usa una
+   custom property registrada para que la transición de `color` de la página
+   no reinicie el retardo en cada frame. */
+@property --hero-text-color {
+  syntax: "<color>";
+  inherits: false;
+  initial-value: #F4F2F5;
+}
+
+.hero__text {
+  transition: --hero-text-color 0s 100ms;
+}
+
+h1.hero__text {
+  --hero-text-color: var(--theme-ink);
+  color: var(--hero-text-color);
+}
+
+p.hero__text {
+  --hero-text-color: var(--theme-ink-muted);
+  color: var(--hero-text-color);
+}
+
+/* El bloque de texto se desplaza por frame con transform: nunca se anima. */
+.hero__content {
+  transition: none;
+  transform: translate3d(0, var(--hero-text-shift, 0px), 0);
+}
+
+/* --- Marca provisional ---------------------------------------------------- */
+
+/* Capa del vuelo: fuera del flujo, sin puntero y sin paradas de tabulación.
+   Va por encima de la barra (50) y por debajo del skip link (60); su opacidad
+   la gobierna el hook. */
+.brand-flight {
+  position: fixed;
+  inset: 0;
+  z-index: 55;
+  overflow: hidden;
+  pointer-events: none;
+  contain: layout style;
+  opacity: var(--brand-flight-copy-opacity, 0);
+}
+
+/* El panel del menú manda: mientras está abierto, la capa no se pinta. La capa
+   es hermana del `header`, no descendiente, así que se usa un ancestro común.
+   `visibility` no altera el layout ni el estado del vuelo (variables y
+   atributos intactos): al cerrar el panel, la copia reaparece en el progreso
+   actual. Requiere `:has()` (línea base 2023); sin soporte, el vuelo sigue
+   funcionando y el panel abierto a mitad de vuelo podría solaparse con la copia. */
+html:has(header [aria-expanded="true"]) .brand-flight {
+  visibility: hidden;
+}
+
+.brand-flight__name,
+.brand-flight__logo {
+  position: absolute;
+  top: 0;
+  left: 0;
+  transform-origin: 0 0;
+  will-change: transform;
+}
+
+/* Ancho real del texto medido, no el del `h1`. `data-brand-lines` decide entre
+   una línea (`nowrap`) y el salto natural del original. */
+.brand-flight__name {
+  width: var(--brand-flight-name-width, 0px);
+  text-align: center;
+  white-space: nowrap;
+  --hero-text-color: var(--theme-ink);
+  color: var(--hero-text-color);
+  transition: --hero-text-color 0s 100ms;
+  transform: translate3d(var(--brand-flight-name-x, 0px), var(--brand-flight-name-y, 0px), 0)
+    scale(var(--brand-flight-name-scale, 1));
+}
+
+.brand-flight[data-brand-lines="multi"] .brand-flight__name {
+  width: calc(var(--brand-flight-name-width, 0px) + 1px);
+  white-space: normal;
+}
+
+.brand-flight__logo {
+  transform: translate3d(var(--brand-flight-logo-x, 0px), var(--brand-flight-logo-y, 0px), 0)
+    scale(var(--brand-flight-logo-scale, 1));
+}
+
+/* Opacidades del vuelo con valor por defecto 1: sin JavaScript, sin medidas o
+   con el vuelo degradado se ve la composición completa (hero y barra). Sin
+   transición: los relevos se gobiernan solo por el scroll. */
+.hero__name-text,
+.hero__logo {
+  opacity: var(--brand-flight-hero-opacity, 1);
+}
+
+/* El puesto real se funde en su copia con el vuelo (RF-16). Sin transición. */
+p.hero__text {
+  opacity: var(--brand-flight-hero-opacity, 1);
+}
+
+/* Copia del puesto: sigue al nombre y se desvanece antes de la barra (RF-16). */
+.brand-flight__role {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: var(--brand-flight-role-width, 0px);
+  transform-origin: 0 0;
+  will-change: transform;
+  opacity: var(--brand-flight-role-opacity, 0);
+  transform: translate3d(var(--brand-flight-role-x, 0px), var(--brand-flight-role-y, 0px), 0)
+    scale(var(--brand-flight-role-scale, 1));
+}
+
+/* Solo el contenido del enlace; el anillo de foco del <a> queda fuera. */
+.brand__inner {
+  opacity: var(--brand-flight-brand-opacity, 1);
+}
+
+/* Con el vuelo en marcha la marca es decorativa: no responde al puntero, pero
+   conserva caja, destino, nombre accesible, modificadores y anillo de foco.
+   Al acoplar —o al degradar, porque `clear()` retira el atributo— vuelve a
+   responder. Nunca `visibility` ni `display`: eso la sacaría del foco. */
+[data-brand="bar"][data-brand-state="flying"] [data-brand="brand-link"] {
+  pointer-events: none;
+}
+
 @media (prefers-reduced-motion: reduce) {
   html {
+    transition: none;
+  }
+
+  .hero__layer,
+  .hero__scrim::before,
+  .hero__scrim::after,
+  .hero__text,
+  .hero__section::after {
     transition: none;
   }
 }
